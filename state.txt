@@ -1,0 +1,3 @@
+Node: Outside
+Plotting: Temperature
+Interval: 2 hours
