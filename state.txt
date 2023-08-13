@@ -1,3 +1,0 @@
-Node: Outside
-Plotting: Lux
-Interval: 24 hours
