@@ -20,12 +20,15 @@ USER = "root"
 PASSWORD = "Bluescope@01"
 DATABASE = ""
 
-PRESSURE_LIST = [0]
-TEMPERATURE_LIST = [0]
-HUMIDITY_LIST = [0]
-LUX_LIST = [0]
-TIME_LIST = [0]
-MOISTURE_LIST = [0]
+PRESSURE_LIST = [0] * 720
+TEMPERATURE_LIST = [0] * 720
+HUMIDITY_LIST = [0] * 720
+LUX_LIST = [0] * 720
+TIME_LIST = [0] * 720
+MOISTURE_LIST = [0] * 720
+LIST_ARRAY = [PRESSURE_LIST, TEMPERATURE_LIST, HUMIDITY_LIST, 
+        LUX_LIST, TIME_LIST, MOISTURE_LIST]
+LIST_STRINGS = ['Pressure', 'Temperature', 'Humidity', 'Lux', 'Time', 'Soil Moisture']
 timeNow = datetime.datetime.now().strftime("%H-%M-%S")
 pressureNow = 0
 humidityNow = 0
@@ -101,26 +104,33 @@ def on_message(client, userdata, msg):
 
     # seg.text = str(temperatureNow)
 
-    if messageCount == 24:    
-        LUX_LIST.insert(0, message['Lux'])
-        TIME_LIST.insert(0, datetime.datetime.now().strftime("%c"))
-        TEMPERATURE_LIST.insert(0, message['Temperature'])
-        HUMIDITY_LIST.insert(0, message['Humidity'])
-        PRESSURE_LIST.insert(0, message['Pressure'])
-        MOISTURE_LIST.insert(0, message['Soil Moisture'])
+    if messageCount == 24:
+        for i in range(len(LIST_ARRAY)):
+            LIST_ARRAY[i].pop(0)
+            if LIST_STRINGS[i] != 'Time':
+                LIST_ARRAY[i].append(message[LIST_STRINGS[i]])
+            else:
+                LIST_ARRAY[i].append(datetime.datetime.now().strftime("%c"))
 
-        if len(LUX_LIST) > 720:
-            LUX_LIST = LUX_LIST[0:720]
-        if len(TIME_LIST) > 720:
-            TIME_LIST = TIME_LIST[0:720]
-        if len(TEMPERATURE_LIST) > 720:
-            TEMPERATURE_LIST = TEMPERATURE_LIST[0:720]
-        if len(PRESSURE_LIST) > 720:
-            PRESSURE_LIST = PRESSURE_LIST[0:720]
-        if len(HUMIDITY_LIST) > 720:
-            HUMIDITY_LIST = HUMIDITY_LIST[0:720]
-        if len(MOISTURE_LIST) > 720:
-            MOISTURE_LIST = MOISTURE_LIST[0:720]
+        #LUX_LIST.insert(0, message['Lux'])
+        #TIME_LIST.insert(0, datetime.datetime.now().strftime("%c"))
+        #TEMPERATURE_LIST.insert(0, message['Temperature'])
+        #HUMIDITY_LIST.insert(0, message['Humidity'])
+        #PRESSURE_LIST.insert(0, message['Pressure'])
+        #MOISTURE_LIST.insert(0, message['Soil Moisture'])
+
+        #if len(LUX_LIST) > 720:
+        #    LUX_LIST = LUX_LIST[0:720]
+        #if len(TIME_LIST) > 720:
+        #    TIME_LIST = TIME_LIST[0:720]
+        #if len(TEMPERATURE_LIST) > 720:
+        #    TEMPERATURE_LIST = TEMPERATURE_LIST[0:720]
+        #if len(PRESSURE_LIST) > 720:
+        #    PRESSURE_LIST = PRESSURE_LIST[0:720]
+        #if len(HUMIDITY_LIST) > 720:
+        #    HUMIDITY_LIST = HUMIDITY_LIST[0:720]
+        #if len(MOISTURE_LIST) > 720:
+        #    MOISTURE_LIST = MOISTURE_LIST[0:720]
 
         messageCount = 0
     else:
@@ -154,7 +164,7 @@ def http_server():
     node = 'None'
     interval = 'None'
     
-    f = open("state.txt", "r+")
+    f = open("/home/ryan/state.txt", "r+")
     txt = f.readline()
     while txt != "":
         txt = txt.strip()
@@ -255,13 +265,20 @@ def http_server():
             
             TIME_LISTS_REV = copy.deepcopy(TIME_LIST)
             datalists_rev = copy.deepcopy(datalist)
-            TIME_LISTS_REV = TIME_LISTS_REV + [0 for i in range(720 - len(TIME_LISTS_REV))]
-            datalists_rev = datalists_rev + [0 for i in range(720 - len(datalists_rev))]
+            #TIME_LISTS_REV.reverse()
+            #datalists_rev.reverse()
+            #z1 = len(TIME_LISTS_REV)
+            #z2 = len(datalists_rev)
+            #if len(TIME_LISTS_REV) < 720:
+            #    TIME_LISTS_REV = TIME_LISTS_REV + [0 for i in range(720 - len(TIME_LISTS_REV))]
+            #if len(datalists_rev) < 720:
+            #    datalists_rev = datalists_rev + [0 for i in range(720 - len(datalists_rev))]
+
             
             if plotting == 'None' or node == 'None' or interval == 'None':
                 datalists_rev = [0 for i in range(720)]
             
-            f = open("state.txt", "r+")
+            f = open("/home/ryan/state.txt", "r+")
             f.seek(0)
             f.truncate()
             f.writelines(['Node: ' + node + '\n',
@@ -269,10 +286,11 @@ def http_server():
                 'Interval: ' + interval + '\n'])
             f.close()
 
-
+            #print(TIME_LISTS_REV[-1-720+z1:-1-720+z1-index])
             c1.send('HTTP\1.0 200 OK\r\nCache-Control: no-cache\r\nContent-type: text/html\r\n\r\n'.encode('utf-8'))
             response = html % (timeNow, temperatureNow, humidityNow, pressureNow, soilMoistureNow, luxNow, timeNow,
-                    (TIME_LISTS_REV[0:index]), (datalists_rev[0:index]))
+                    (TIME_LISTS_REV[720 - index:]), 
+                    (datalists_rev[720 - index:]))
             c1.send(response.encode('utf-8'))
             c1.close()
         except OSError as e:
