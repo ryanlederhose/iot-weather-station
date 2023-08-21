@@ -47,6 +47,34 @@ measurementList = [timeNow, pressureNow, humidityNow, soilMoistureNow, temperatu
 
 html = get_html_string()
 
+trig = 27
+echo = 17
+
+def ultrasonic_gpio():
+    GPIO.setmode(GPIO.BCM)
+    GPIO.setup(27, GPIO.OUT)
+    GPIO.setup(17, GPIO.IN)
+
+def get_distance():
+    GPIO.output(trig, False)
+    time.sleep(0.1)
+    GPIO.output(trig, True)
+    time.sleep(0.00001)
+    GPIO.output(trig, False)
+    while GPIO.input(echo) == 0:
+        pulse_start = time.time()
+    while GPIO.input(echo) == 1:
+        pulse_end = time.time()
+    pulse_duration = pulse_end - pulse_start
+    distance = pulse_duration * 17000
+    if pulse_duration >= 0.01746:
+        return 0
+    elif distance > 300 or distance == 0:
+        return 0
+    distance = round(distance, 3)
+    return distance
+
+
 def socket_connection(addr):
     s = socket.socket()
     s.bind(addr)
@@ -338,6 +366,8 @@ def main():
     global displayList
     global SPI_USED_ISR
 
+    ultrasonic_gpio()
+
     time.sleep(10)
 
     client = mqtt.Client(client_id='test_rpi', transport='tcp')
@@ -345,7 +375,7 @@ def main():
     client.on_subscribe = on_subscribe
     client.on_message = on_message
 
-    client.connect(host="192.168.20.20", port=1883, keepalive=10)
+    client.connect(host="192.168.20.13", port=1883, keepalive=10)
 
     time.sleep(4)
     print('Client Connection Status: ', client.is_connected())
@@ -362,14 +392,20 @@ def main():
     device = max7219(serial, cascaded=1)
     seg = sevensegment(device)
 
-    GPIO.setmode(GPIO.BCM)
-    GPIO.setup(BUTTON_GPIO, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-    GPIO.add_event_detect(BUTTON_GPIO, GPIO.RISING, callback=gpio_isr, bouncetime=2250)
+    #GPIO.setmode(GPIO.BCM)
+    #GPIO.setup(BUTTON_GPIO, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+    #GPIO.add_event_detect(BUTTON_GPIO, GPIO.RISING, callback=gpio_isr, bouncetime=2250)
 
     serverThread = threading.Thread(target=http_server)
     serverThread.start()
 
     while True:
+
+        distance = get_distance()
+        print(distance)
+        if distance <= 10 and distance > 0:
+            show_message_vp(device, str(displayList[displayIndex]))
+
         measurementList.pop(0)
         measurementList.insert(0, datetime.datetime.now().strftime("%H-%M-%S"))
         try:
@@ -378,7 +414,7 @@ def main():
         except:
             print(e)
             pass
-        time.sleep(0.5)
+        time.sleep(0.1)
 
 if __name__=='__main__':
     main()
