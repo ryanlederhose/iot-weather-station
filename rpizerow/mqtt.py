@@ -139,27 +139,6 @@ def on_message(client, userdata, msg):
                 LIST_ARRAY[i].append(message[LIST_STRINGS[i]])
             else:
                 LIST_ARRAY[i].append(datetime.datetime.now().strftime("%c"))
-
-        #LUX_LIST.insert(0, message['Lux'])
-        #TIME_LIST.insert(0, datetime.datetime.now().strftime("%c"))
-        #TEMPERATURE_LIST.insert(0, message['Temperature'])
-        #HUMIDITY_LIST.insert(0, message['Humidity'])
-        #PRESSURE_LIST.insert(0, message['Pressure'])
-        #MOISTURE_LIST.insert(0, message['Soil Moisture'])
-
-        #if len(LUX_LIST) > 720:
-        #    LUX_LIST = LUX_LIST[0:720]
-        #if len(TIME_LIST) > 720:
-        #    TIME_LIST = TIME_LIST[0:720]
-        #if len(TEMPERATURE_LIST) > 720:
-        #    TEMPERATURE_LIST = TEMPERATURE_LIST[0:720]
-        #if len(PRESSURE_LIST) > 720:
-        #    PRESSURE_LIST = PRESSURE_LIST[0:720]
-        #if len(HUMIDITY_LIST) > 720:
-        #    HUMIDITY_LIST = HUMIDITY_LIST[0:720]
-        #if len(MOISTURE_LIST) > 720:
-        #    MOISTURE_LIST = MOISTURE_LIST[0:720]
-
         messageCount = 0
     else:
         messageCount += 1
@@ -293,15 +272,6 @@ def http_server():
             
             TIME_LISTS_REV = copy.deepcopy(TIME_LIST)
             datalists_rev = copy.deepcopy(datalist)
-            #TIME_LISTS_REV.reverse()
-            #datalists_rev.reverse()
-            #z1 = len(TIME_LISTS_REV)
-            #z2 = len(datalists_rev)
-            #if len(TIME_LISTS_REV) < 720:
-            #    TIME_LISTS_REV = TIME_LISTS_REV + [0 for i in range(720 - len(TIME_LISTS_REV))]
-            #if len(datalists_rev) < 720:
-            #    datalists_rev = datalists_rev + [0 for i in range(720 - len(datalists_rev))]
-
             
             if plotting == 'None' or node == 'None' or interval == 'None':
                 datalists_rev = [0 for i in range(720)]
@@ -314,7 +284,6 @@ def http_server():
                 'Interval: ' + interval + '\n'])
             f.close()
 
-            #print(TIME_LISTS_REV[-1-720+z1:-1-720+z1-index])
             c1.send('HTTP\1.0 200 OK\r\nCache-Control: no-cache\r\nContent-type: text/html\r\n\r\n'.encode('utf-8'))
             response = html % (timeNow, temperatureNow, humidityNow, pressureNow, soilMoistureNow, luxNow, timeNow,
                     (TIME_LISTS_REV[720 - index:]), 
@@ -391,11 +360,7 @@ def main():
     serial = spi(port=0, device=0, gpio=noop())
     device = max7219(serial, cascaded=1)
     seg = sevensegment(device)
-
-    #GPIO.setmode(GPIO.BCM)
-    #GPIO.setup(BUTTON_GPIO, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-    #GPIO.add_event_detect(BUTTON_GPIO, GPIO.RISING, callback=gpio_isr, bouncetime=2250)
-
+        
     serverThread = threading.Thread(target=http_server)
     serverThread.start()
 
